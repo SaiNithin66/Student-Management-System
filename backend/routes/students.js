@@ -17,10 +17,18 @@ router.post('/', verifyToken, async (req, res) => {
     semester5, semester6, semester7, semester8
   } = req.body;
 
-  const avg = (
-    semester1 + semester2 + semester3 + semester4 +
-    semester5 + semester6 + semester7 + semester8
-  ) / 8;
+  // Calculate average only for valid entered semesters
+  const semesterMarks = [
+    semester1, semester2, semester3, semester4,
+    semester5, semester6, semester7, semester8
+  ];
+
+  const validMarks = semesterMarks
+    .map(mark => Number(mark))
+    .filter(mark => !isNaN(mark) && mark > 0);  // Skip blank, null, undefined, and 0
+
+  const total = validMarks.reduce((sum, mark) => sum + mark, 0);
+  const avg = validMarks.length > 0 ? total / validMarks.length : 0;
 
   const newStudent = new Student({
     name, roll, email, mobile,
@@ -35,7 +43,30 @@ router.post('/', verifyToken, async (req, res) => {
 
 // Update student
 router.put('/:id', verifyToken, async (req, res) => {
-  const updated = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const {
+    semester1, semester2, semester3, semester4,
+    semester5, semester6, semester7, semester8
+  } = req.body;
+
+  // Recalculate average for updated semesters
+  const semesterMarks = [
+    semester1, semester2, semester3, semester4,
+    semester5, semester6, semester7, semester8
+  ];
+
+  const validMarks = semesterMarks
+    .map(mark => Number(mark))
+    .filter(mark => !isNaN(mark) && mark > 0);  // Consider only valid CGPAs
+
+  const total = validMarks.reduce((sum, mark) => sum + mark, 0);
+  const avg = validMarks.length > 0 ? total / validMarks.length : 0;
+
+  const updatedStudent = {
+    ...req.body,
+    average: avg
+  };
+
+  const updated = await Student.findByIdAndUpdate(req.params.id, updatedStudent, { new: true });
   res.json(updated);
 });
 
